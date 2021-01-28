@@ -1,0 +1,17 @@
+{
+  "name": "api-rest-minimarket",
+  "version": "1.0.0",
+  "description": "API REST para la tesis de minimarket",
+  "main": "app.js",
+  "scripts": {
+    "start:dev": "nodemon app.js"
+  },
+  "keywords": [
+    "Minimarket"
+  ],
+  "author": "Karen Aguaysa",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
