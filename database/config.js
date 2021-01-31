@@ -7,7 +7,7 @@ const dbConnection = {
   //password: '',
   database: process.env.DB_DATABASE,
   port: process.env.DB_PORT,
-  connectionLimit: process.env.DB_CONNECTION_LIMIT,
+  connectionLimit: 10,
 };
 
 const pool = mysql.createPool(dbConnection);
