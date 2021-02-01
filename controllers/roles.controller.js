@@ -98,10 +98,10 @@ const obtenerRolPorId = async (req, res = response) => {
 
 // SECTION - CREAR UN NUEVO ROL
 const crearRol = async (req, res = response) => {
-    const rol = {
-        nombre_rol = req.body.nombre_rol,
-        estado_rol: 'activo',
-    };
+  const rol = {
+    nombre_rol: req.body.nombre_rol,
+    estado_rol: 'activo',
+  };
 
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
@@ -155,7 +155,7 @@ const actualizarRolPorId = async (req, res = response) => {
       }
 
       connection.query(
-        ' UPDATE roles SET nombre_rol = ? WHERE id_rol = ? AND estado_rol="activo"', 
+        ' UPDATE roles SET nombre_rol = ? WHERE id_rol = ? AND estado_rol="activo"',
         [nombre_rol, id_rol],
         (error, result) => {
           if (error) {
@@ -174,8 +174,8 @@ const actualizarRolPorId = async (req, res = response) => {
           }
 
           resolve({
-            id_rol, 
-            nombre_rol ,
+            id_rol,
+            nombre_rol,
             estado_rol: 'activo',
           });
 
@@ -258,5 +258,10 @@ const eliminarRolPorId = async (req, res = response) => {
     );
 };
 
-module.exports = { obtenerRoles, obtenerRolPorId, crearRol, actualizarRolPorId, eliminarRolPorId 
+module.exports = {
+  obtenerRoles,
+  obtenerRolPorId,
+  crearRol,
+  actualizarRolPorId,
+  eliminarRolPorId,
 };
