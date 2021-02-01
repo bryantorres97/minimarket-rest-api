@@ -13,6 +13,6 @@ router.get('/', obtenerPasillos);
 router.get('/:id', obtenerPasilloPorId);
 router.post('/', crearPasillo);
 router.put('/:id', actualizarPasilloPorId);
-router.put('/:delete', eliminarPasilloPorId);
+router.delete('/:id', eliminarPasilloPorId);
 
 module.exports = router;
