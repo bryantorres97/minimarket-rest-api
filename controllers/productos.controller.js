@@ -1,8 +1,8 @@
 const { response } = require('express');
 const { pool } = require('../database/config');
 
-//SECTION - OBTENER TODAS LAS PERCHAS ACTIVAS DENTRO DE LA BD
-const obtenerPerchas = async (req, res = response) => {
+//SECTION - OBTENER TODOS LOS PRODUCTOS ACTIVOS DENTRO DE LA BD
+const obtenerProdcutos = async (req, res = response) => {
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
@@ -10,7 +10,7 @@ const obtenerPerchas = async (req, res = response) => {
       }
 
       connection.query(
-        'SELECT * FROM perchas WHERE estado_percha="activo"',
+        'SELECT * FROM productos WHERE estado_producto="activo"',
         (error, result) => {
           if (error) {
             reject({
@@ -33,7 +33,7 @@ const obtenerPerchas = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        perchas: result,
+        productos: result,
       })
     )
     .catch((error) =>
@@ -44,8 +44,8 @@ const obtenerPerchas = async (req, res = response) => {
     );
 };
 
-// SECTION - OBTENER LA PERCHA A TRAVES DE UN IDENTIFICADOR
-const obtenerPerchaPorId = async (req, res = response) => {
+// SECTION - OBTENER EL PRODUCTO A TRAVES DE UN IDENTIFICADOR
+const obtenerProductoPorId = async (req, res = response) => {
   const id = req.params.id;
 
   return new Promise((resolve, reject) => {
@@ -55,7 +55,7 @@ const obtenerPerchaPorId = async (req, res = response) => {
       }
 
       connection.query(
-        'SELECT * FROM perchas WHERE id_percha = ? AND estado_percha="activo"',
+        'SELECT * FROM productos WHERE id_producto = ? AND estado_producto="activo"',
         id,
         (error, result) => {
           if (error) {
@@ -68,7 +68,7 @@ const obtenerPerchaPorId = async (req, res = response) => {
           if (result.length == 0) {
             reject({
               code: 402,
-              msg: 'No se ha encontrado la percha especificada',
+              msg: 'No se ha encontrado el prodcuto especificado',
             });
           }
 
@@ -86,7 +86,7 @@ const obtenerPerchaPorId = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        percha: result,
+        producto: result,
       })
     )
     .catch((error) =>
@@ -97,13 +97,18 @@ const obtenerPerchaPorId = async (req, res = response) => {
     );
 };
 
-// SECTION - CREAR UNA NUEVA PERCHA
-const crearPercha = async (req, res = response) => {
-  const percha = {
-    nombre_percha: req.body.nombre_percha,
-    descripcion_percha: req.body.descripcion_percha,
-    id_pasillo_per: req.body.id_pasillo_per,
-    estado_percha: 'activo',
+// SECTION - CREAR UN NUEVO PRODUCTO
+const crearProducto = async (req, res = response) => {
+  const producto = {
+    nombre_producto: req.body.nombre_producto,
+    descripcion_producto: req.body.descripcion_producto,
+    precio_producto: req.body.precio_producto,
+    precio_v_producto: req.body.precio_v_producto,
+    stock_producto: req.body.stock_producto,
+    codigo_producto: req.body.codigo_producto,
+    id_percha_per: req.body.id_percha_per,
+    foto_producto: '',
+    estado_producto: 'activo',
   };
 
   return await new Promise((resolve, reject) => {
@@ -112,7 +117,7 @@ const crearPercha = async (req, res = response) => {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
       }
 
-      connection.query('INSERT INTO perchas SET ?', percha, (error, result) => {
+      connection.query('INSERT INTO productos SET ?', producto, (error, result) => {
         if (error) {
           reject({
             code: 502,
@@ -122,7 +127,7 @@ const crearPercha = async (req, res = response) => {
 
         const { insertId } = result;
 
-        resolve({ id_percha: insertId, ...percha });
+        resolve({ id_producto: insertId, ...producto });
 
         connection.release((error) => {
           if (error) {
@@ -135,7 +140,7 @@ const crearPercha = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        percha: result,
+        producto: result,
       })
     )
     .catch((error) =>
@@ -146,10 +151,19 @@ const crearPercha = async (req, res = response) => {
     );
 };
 
-// SECTION - ACTUALIZAR UNA PERCHA
-const actualizarPerchaPorId = async (req, res = response) => {
-  const id_percha = req.params.id;
-  const { nombre_percha, descripcion_percha, id_pasillo_per } = req.body;
+// SECTION - ACTUALIZAR UN PRODUCTO
+const actualizarProductoPorId = async (req, res = response) => {
+  const id_producto = req.params.id;
+  const {
+    nombre_producto,
+    descripcion_producto,
+    precio_producto,
+    precio_v_producto,
+    stock_producto,
+    codigo_producto,
+    foto_producto,
+    id_percha_per,
+  } = req.body;
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
@@ -157,10 +171,21 @@ const actualizarPerchaPorId = async (req, res = response) => {
       }
 
       connection.query(
-        `UPDATE perchas 
-        SET nombre_percha = ?, descripcion_percha=?, id_pasillo_per=?  
-        WHERE id_percha = ? AND estado_percha="activo"`,
-        [nombre_percha, descripcion_percha, id_pasillo_per, id_percha],
+        `UPDATE productos 
+        SET nombre_producto = ?, descripcion_producto=?, precio_producto=?, precio_v_producto=?, 
+            stock_producto=?, codigo_producto=?, foto_producto=?,  id_percha_per=?  
+        WHERE id_producto = ? AND estado_producto="activo"`,
+        [
+          nombre_producto,
+          descripcion_producto,
+          precio_producto,
+          precio_v_producto,
+          stock_producto,
+          codigo_producto,
+          foto_producto,
+          id_percha_per,
+          id_producto,
+        ],
         (error, result) => {
           if (error) {
             console.log(error);
@@ -173,16 +198,21 @@ const actualizarPerchaPorId = async (req, res = response) => {
           if (result.affectedRows == 0) {
             reject({
               code: 404,
-              msg: 'No se ha encontrado la percha',
+              msg: 'No se ha encontrado el producto',
             });
           }
 
           resolve({
-            id_percha,
-            nombre_percha,
-            descripcion_percha,
-            id_pasillo_per,
-            estado_percha: 'activo',
+            id_producto,
+            nombre_producto,
+            descripcion_producto,
+            precio_producto,
+            precio_v_producto,
+            stock_producto,
+            codigo_producto,
+            foto_producto,
+            id_percha_per,
+            estado_producto: 'activo',
           });
 
           connection.release((error) => {
@@ -197,7 +227,7 @@ const actualizarPerchaPorId = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        percha: result,
+        producto: result,
       })
     )
     .catch((error) =>
@@ -208,18 +238,17 @@ const actualizarPerchaPorId = async (req, res = response) => {
     );
 };
 
-// SECTION - ELIMINAR UNA PERCHA
-const eliminarPerchaPorId = async (req, res = response) => {
-  const id_percha = req.params.id;
+// SECTION - ELIMINAR UN PRODUCTO
+const eliminarProductoPorId = async (req, res = response) => {
+  const id_producto = req.params.id;
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
       }
-
       connection.query(
-        'UPDATE perchas SET estado_percha = "inactivo" WHERE id_percha = ? AND estado_percha= "activo"',
-        id_percha,
+        'UPDATE productos SET estado_producto = "inactivo" WHERE id_producto = ? AND estado_producto= "activo"',
+        id_producto,
         (error, result) => {
           if (error) {
             console.log(error);
@@ -232,7 +261,7 @@ const eliminarPerchaPorId = async (req, res = response) => {
           if (result.affectedRows == 0) {
             reject({
               code: 404,
-              msg: 'No se ha encontrado la percha',
+              msg: 'No se ha encontrado el producto',
             });
           }
 
@@ -265,9 +294,9 @@ const eliminarPerchaPorId = async (req, res = response) => {
 };
 
 module.exports = {
-  obtenerPerchas,
-  obtenerPerchaPorId,
-  crearPercha,
-  actualizarPerchaPorId,
-  eliminarPerchaPorId,
+  obtenerProdcutos,
+  obtenerProductoPorId,
+  crearProducto,
+  actualizarProductoPorId,
+  eliminarProductoPorId,
 };
