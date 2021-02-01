@@ -18,7 +18,8 @@ app.use(express.json());
 app.use('/api/clientes', require('./routes/clientes.route'));
 //rutas de pasillos
 app.use('/api/pasillos', require('./routes/pasillos.route'));
-
+//rutas de perchas
+app.use('/api/perchas', require('./routes/perchas.route'));
 app.listen(process.env.APP_PORT, () => {
   console.log(`Servidor corriendo en el puerto ${process.env.APP_PORT}`);
 });
