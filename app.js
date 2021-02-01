@@ -22,6 +22,8 @@ app.use('/api/pasillos', require('./routes/pasillos.route'));
 app.use('/api/perchas', require('./routes/perchas.route'));
 //rutas de productos
 app.use('/api/productos', require('./routes/productos.route'));
+// rutas de roles
+app.use('/api/roles', require('./routes/roles.route'));
 
 app.listen(process.env.APP_PORT, () => {
   console.log(`Servidor corriendo en el puerto ${process.env.APP_PORT}`);

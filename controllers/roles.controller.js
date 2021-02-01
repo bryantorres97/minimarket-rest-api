@@ -1,8 +1,7 @@
 const { response } = require('express');
 const { pool } = require('../database/config');
-
-//SECTION - OBTENER TODOS LOS PRODUCTOS ACTIVOS DENTRO DE LA BD
-const obtenerProdcutos = async (req, res = response) => {
+//SECTION - OBTENER TODOS LOS ROLES ACTIVOS DENTRO DE LA BD
+const obtenerRoles = async (req, res = response) => {
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
@@ -10,7 +9,7 @@ const obtenerProdcutos = async (req, res = response) => {
       }
 
       connection.query(
-        'SELECT * FROM productos WHERE estado_producto="activo"',
+        'SELECT * FROM roles WHERE estado_rol="activo"',
         (error, result) => {
           if (error) {
             reject({
@@ -33,7 +32,7 @@ const obtenerProdcutos = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        productos: result,
+        roles: result,
       })
     )
     .catch((error) =>
@@ -44,8 +43,8 @@ const obtenerProdcutos = async (req, res = response) => {
     );
 };
 
-// SECTION - OBTENER EL PRODUCTO A TRAVES DE UN IDENTIFICADOR
-const obtenerProductoPorId = async (req, res = response) => {
+// SECTION - OBTENER EL ROL A TRAVES DE UN IDENTIFICADOR
+const obtenerRolPorId = async (req, res = response) => {
   const id = req.params.id;
 
   return new Promise((resolve, reject) => {
@@ -55,7 +54,7 @@ const obtenerProductoPorId = async (req, res = response) => {
       }
 
       connection.query(
-        'SELECT * FROM productos WHERE id_producto = ? AND estado_producto="activo"',
+        'SELECT * FROM roles WHERE id_rol = ? AND estado_rol="activo"',
         id,
         (error, result) => {
           if (error) {
@@ -68,7 +67,7 @@ const obtenerProductoPorId = async (req, res = response) => {
           if (result.length == 0) {
             reject({
               code: 402,
-              msg: 'No se ha encontrado el prodcuto especificado',
+              msg: 'No se ha encontrado el rol especificado',
             });
           }
 
@@ -86,7 +85,7 @@ const obtenerProductoPorId = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        producto: result,
+        rol: result,
       })
     )
     .catch((error) =>
@@ -97,19 +96,12 @@ const obtenerProductoPorId = async (req, res = response) => {
     );
 };
 
-// SECTION - CREAR UN NUEVO PRODUCTO
-const crearProducto = async (req, res = response) => {
-  const producto = {
-    nombre_producto: req.body.nombre_producto,
-    descripcion_producto: req.body.descripcion_producto,
-    precio_producto: req.body.precio_producto,
-    precio_v_producto: req.body.precio_v_producto,
-    stock_producto: req.body.stock_producto,
-    codigo_producto: req.body.codigo_producto,
-    id_percha_per: req.body.id_percha_per,
-    foto_producto: '',
-    estado_producto: 'activo',
-  };
+// SECTION - CREAR UN NUEVO ROL
+const crearRol = async (req, res = response) => {
+    const rol = {
+        nombre_rol = req.body.nombre_rol,
+        estado_rol: 'activo',
+    };
 
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
@@ -117,7 +109,7 @@ const crearProducto = async (req, res = response) => {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
       }
 
-      connection.query('INSERT INTO productos SET ?', producto, (error, result) => {
+      connection.query('INSERT INTO roles SET ?', rol, (error, result) => {
         if (error) {
           reject({
             code: 502,
@@ -127,7 +119,7 @@ const crearProducto = async (req, res = response) => {
 
         const { insertId } = result;
 
-        resolve({ id_producto: insertId, ...producto });
+        resolve({ id_rol: insertId, ...rol });
 
         connection.release((error) => {
           if (error) {
@@ -140,7 +132,7 @@ const crearProducto = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        producto: result,
+        rol: result,
       })
     )
     .catch((error) =>
@@ -151,19 +143,11 @@ const crearProducto = async (req, res = response) => {
     );
 };
 
-// SECTION - ACTUALIZAR UN PRODUCTO
-const actualizarProductoPorId = async (req, res = response) => {
-  const id_producto = req.params.id;
-  const {
-    nombre_producto,
-    descripcion_producto,
-    precio_producto,
-    precio_v_producto,
-    stock_producto,
-    codigo_producto,
-    foto_producto,
-    id_percha_per,
-  } = req.body;
+// SECTION - ACTUALIZAR UN ROL
+const actualizarRolPorId = async (req, res = response) => {
+  const id_rol = req.params.id;
+  const { nombre_rol } = req.body;
+
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
@@ -171,21 +155,8 @@ const actualizarProductoPorId = async (req, res = response) => {
       }
 
       connection.query(
-        `UPDATE productos 
-        SET nombre_producto = ?, descripcion_producto=?, precio_producto=?, precio_v_producto=?, 
-            stock_producto=?, codigo_producto=?, foto_producto=?,  id_percha_per=?  
-        WHERE id_producto = ? AND estado_producto="activo"`,
-        [
-          nombre_producto,
-          descripcion_producto,
-          precio_producto,
-          precio_v_producto,
-          stock_producto,
-          codigo_producto,
-          foto_producto,
-          id_percha_per,
-          id_producto,
-        ],
+        ' UPDATE roles SET nombre_rol = ? WHERE id_rol = ? AND estado_rol="activo"', 
+        [nombre_rol, id_rol],
         (error, result) => {
           if (error) {
             console.log(error);
@@ -198,21 +169,14 @@ const actualizarProductoPorId = async (req, res = response) => {
           if (result.affectedRows == 0) {
             reject({
               code: 404,
-              msg: 'No se ha encontrado el producto',
+              msg: 'No se ha encontrado el rol',
             });
           }
 
           resolve({
-            id_producto,
-            nombre_producto,
-            descripcion_producto,
-            precio_producto,
-            precio_v_producto,
-            stock_producto,
-            codigo_producto,
-            foto_producto,
-            id_percha_per,
-            estado_producto: 'activo',
+            id_rol, 
+            nombre_rol ,
+            estado_rol: 'activo',
           });
 
           connection.release((error) => {
@@ -227,7 +191,7 @@ const actualizarProductoPorId = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        producto: result,
+        rol: result,
       })
     )
     .catch((error) =>
@@ -238,17 +202,18 @@ const actualizarProductoPorId = async (req, res = response) => {
     );
 };
 
-// SECTION - ELIMINAR UN PRODUCTO
-const eliminarProductoPorId = async (req, res = response) => {
-  const id_producto = req.params.id;
+// SECTION - ELIMINAR UN ROL
+const eliminarRolPorId = async (req, res = response) => {
+  const id_rol = req.params.id;
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
       }
+
       connection.query(
-        'UPDATE productos SET estado_producto = "inactivo" WHERE id_producto = ? AND estado_producto= "activo"',
-        id_producto,
+        'UPDATE roles SET estado_rol = "inactivo" WHERE id_rol = ? AND estado_rol = "activo"',
+        id_rol,
         (error, result) => {
           if (error) {
             console.log(error);
@@ -261,13 +226,13 @@ const eliminarProductoPorId = async (req, res = response) => {
           if (result.affectedRows == 0) {
             reject({
               code: 404,
-              msg: 'No se ha encontrado el producto',
+              msg: 'No se ha encontrado el rol',
             });
           }
 
           resolve({
-            id_pasillo,
-            msg: 'El pasillo ha sido eliminado correctamente',
+            id_rol,
+            msg: 'El rol ha sido eliminado correctamente',
           });
 
           connection.release((error) => {
@@ -293,10 +258,5 @@ const eliminarProductoPorId = async (req, res = response) => {
     );
 };
 
-module.exports = {
-  obtenerProdcutos,
-  obtenerProductoPorId,
-  crearProducto,
-  actualizarProductoPorId,
-  eliminarProductoPorId,
+module.exports = { obtenerRoles, obtenerRolPorId, crearRol, actualizarRolPorId, eliminarRolPorId 
 };
