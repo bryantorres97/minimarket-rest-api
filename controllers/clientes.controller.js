@@ -1,12 +1,17 @@
 const { response } = require('express');
 const { pool } = require('../database/config');
 
+/* -------------------------------------------------------------------------- */
+/*                        FUNCIONES PARA LOS SERVICIOS                        */
+/* -------------------------------------------------------------------------- */
+
 // SECTION OBTENER TODOS LOS CLIENTES ACTIVOS DENTRO DE LA BD
 const obtenerClientes = async (req, res = response) => {
   return new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -17,14 +22,12 @@ const obtenerClientes = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           resolve(result);
-
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -52,6 +55,7 @@ const obtenerClientePorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -63,6 +67,7 @@ const obtenerClientePorId = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.length == 0) {
@@ -75,9 +80,7 @@ const obtenerClientePorId = async (req, res = response) => {
           resolve(result[0]);
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -162,6 +165,7 @@ const actualizarClientePorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -178,11 +182,11 @@ const actualizarClientePorId = async (req, res = response) => {
         ],
         (error, result) => {
           if (error) {
-            console.log(error);
             reject({
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.affectedRows == 0) {
@@ -203,9 +207,7 @@ const actualizarClientePorId = async (req, res = response) => {
           });
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -232,6 +234,7 @@ const eliminarClientePorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -244,6 +247,7 @@ const eliminarClientePorId = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.affectedRows == 0) {
@@ -281,10 +285,78 @@ const eliminarClientePorId = async (req, res = response) => {
     );
 };
 
+/* -------------------------------------------------------------------------- */
+/*                 FUNCIONES PARA VALIDAR CLIENTES EXISTENTES                 */
+/* -------------------------------------------------------------------------- */
+
+// SECTION VERIFICAR SI EXISTE UN CLIENTE
+const existeClientePorCedula = async (cedula) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+
+      connection.query(
+        `SELECT * FROM clientes WHERE cedula_cliente= ? AND estado_cliente = "activo"`,
+        cedula,
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          resolve(result.length > 0);
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  });
+};
+
+const existeClientePorCedulaActualizable = async (id, cedula) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+
+      connection.query(
+        `SELECT * FROM clientes 
+        WHERE id_cliente != ? AND cedula_cliente= ? AND estado_cliente = "activo"`,
+        [id, cedula],
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          resolve(result.length > 0);
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  });
+};
+
 module.exports = {
   obtenerClientes,
   obtenerClientePorId,
   crearCliente,
   actualizarClientePorId,
   eliminarClientePorId,
+  existeClientePorCedula,
+  existeClientePorCedulaActualizable,
 };
