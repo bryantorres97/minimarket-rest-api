@@ -7,6 +7,7 @@ const {
   existePasilloPorNombre,
   existePasilloPorNombreActualizable,
 } = require('../controllers/pasillos.controller');
+const { existePerchaPorNombre } = require('../controllers/perchas.controller');
 
 const validarClienteExistente = async (req, res = response, next) => {
   const { cedula_cliente } = req.body;
@@ -93,9 +94,53 @@ const validarPasilloExistenteActualizable = async (req, res = response, next) =>
     });
 };
 
+const validarPerchaExistente = async (req, res = response, next) => {
+  const { nombre_percha } = req.body;
+
+  await existePerchaPorNombre(nombre_percha)
+    .then((existe) => {
+      if (existe) {
+        return res.status(409).json({
+          ok: false,
+          msg: 'La percha ingresada ya se encuentra registrada',
+        });
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      });
+    });
+};
+
+const validarPerchaExistenteActualizable = async (req, res = response, next) => {
+  const { nombre_percha } = req.body;
+  const id_percha = req.params.id;
+  await existePasilloPorNombreActualizable(id_percha, nombre_percha)
+    .then((existe) => {
+      if (existe) {
+        return res.status(409).json({
+          ok: false,
+          msg: 'La percha ingresada ya se encuentra registrada',
+        });
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      });
+    });
+};
+
 module.exports = {
   validarClienteExistente,
   validarClienteExistenteActualizable,
   validarPasilloExistente,
   validarPasilloExistenteActualizable,
+  validarPerchaExistente,
+  validarPerchaExistenteActualizable,
 };

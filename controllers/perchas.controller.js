@@ -7,6 +7,7 @@ const obtenerPerchas = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -17,14 +18,13 @@ const obtenerPerchas = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           resolve(result);
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -52,6 +52,7 @@ const obtenerPerchaPorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -63,6 +64,7 @@ const obtenerPerchaPorId = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.length == 0) {
@@ -75,9 +77,7 @@ const obtenerPerchaPorId = async (req, res = response) => {
           resolve(result[0]);
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -110,6 +110,7 @@ const crearPercha = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query('INSERT INTO perchas SET ?', percha, (error, result) => {
@@ -118,6 +119,7 @@ const crearPercha = async (req, res = response) => {
             code: 502,
             msg: 'No se puede ejecutar su petición en este momento',
           });
+          return;
         }
 
         const { insertId } = result;
@@ -125,9 +127,7 @@ const crearPercha = async (req, res = response) => {
         resolve({ id_percha: insertId, ...percha });
 
         connection.release((error) => {
-          if (error) {
-            reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-          }
+          if (error) console.log('Error al cerrar la conexión');
         });
       });
     });
@@ -154,6 +154,7 @@ const actualizarPerchaPorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -163,11 +164,11 @@ const actualizarPerchaPorId = async (req, res = response) => {
         [nombre_percha, descripcion_percha, id_pasillo_per, id_percha],
         (error, result) => {
           if (error) {
-            console.log(error);
             reject({
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.affectedRows == 0) {
@@ -186,9 +187,7 @@ const actualizarPerchaPorId = async (req, res = response) => {
           });
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -215,6 +214,7 @@ const eliminarPerchaPorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -227,6 +227,7 @@ const eliminarPerchaPorId = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.affectedRows == 0) {
@@ -237,7 +238,7 @@ const eliminarPerchaPorId = async (req, res = response) => {
           }
 
           resolve({
-            id_pasillo,
+            id_percha,
             msg: 'La percha ha sido eliminada correctamente',
           });
 
@@ -264,10 +265,76 @@ const eliminarPerchaPorId = async (req, res = response) => {
     );
 };
 
+/* -------------------------------------------------------------------------- */
+/*                  FUNCIONES PARA VALIDAR PERCHAS EXISTENTES                 */
+/* -------------------------------------------------------------------------- */
+
+const existePerchaPorNombre = async (nombre) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+
+      connection.query(
+        `SELECT * FROM perchas WHERE nombre_percha= ? AND estado_percha = "activo"`,
+        nombre,
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          resolve(result.length > 0);
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  });
+};
+
+const existePerchaPorNombreActualizable = async (id, nombre) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+
+      connection.query(
+        `SELECT * FROM perchas WHERE id_percha != ? AND nombre_percha= ? AND estado_percha = "activo"`,
+        [id, nombre],
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          resolve(result.length > 0);
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  });
+};
+
 module.exports = {
   obtenerPerchas,
   obtenerPerchaPorId,
   crearPercha,
   actualizarPerchaPorId,
   eliminarPerchaPorId,
+  existePerchaPorNombre,
+  existePerchaPorNombreActualizable,
 };
