@@ -6,6 +6,7 @@ const obtenerPasillos = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -16,14 +17,14 @@ const obtenerPasillos = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+
+            return;
           }
 
           resolve(result);
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -43,6 +44,8 @@ const obtenerPasillos = async (req, res = response) => {
     );
 };
 
+//!SECTION
+
 // SECTION - OBTENER EL PASILLO A TRAVES DE UN IDENTIFICADOR
 const obtenerPasilloPorId = async (req, res = response) => {
   const id = req.params.id;
@@ -51,6 +54,7 @@ const obtenerPasilloPorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -62,6 +66,7 @@ const obtenerPasilloPorId = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.length == 0) {
@@ -74,9 +79,7 @@ const obtenerPasilloPorId = async (req, res = response) => {
           resolve(result[0]);
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -95,6 +98,7 @@ const obtenerPasilloPorId = async (req, res = response) => {
       })
     );
 };
+//!SECTION
 
 // SECTION - CREAR UN NUEVO PASILLO
 const crearPasillo = async (req, res = response) => {
@@ -108,6 +112,7 @@ const crearPasillo = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query('INSERT INTO pasillos SET ?', pasillo, (error, result) => {
@@ -116,6 +121,7 @@ const crearPasillo = async (req, res = response) => {
             code: 502,
             msg: 'No se puede ejecutar su petición en este momento',
           });
+          return;
         }
 
         const { insertId } = result;
@@ -123,9 +129,7 @@ const crearPasillo = async (req, res = response) => {
         resolve({ id_pasillo: insertId, ...pasillo });
 
         connection.release((error) => {
-          if (error) {
-            reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-          }
+          if (error) console.log('Error al cerrar la conexión');
         });
       });
     });
@@ -143,6 +147,7 @@ const crearPasillo = async (req, res = response) => {
       })
     );
 };
+//!SECTION
 
 // SECTION - ACTUALIZAR UN PASILLO
 const actualizarPasilloPorId = async (req, res = response) => {
@@ -204,6 +209,7 @@ const actualizarPasilloPorId = async (req, res = response) => {
       })
     );
 };
+//!SECTION
 
 // SECTION - ELIMINAR UN PASILLO
 const eliminarPasilloPorId = async (req, res = response) => {
@@ -212,6 +218,7 @@ const eliminarPasilloPorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -219,11 +226,11 @@ const eliminarPasilloPorId = async (req, res = response) => {
         id_pasillo,
         (error, result) => {
           if (error) {
-            console.log(error);
             reject({
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.affectedRows == 0) {
@@ -260,6 +267,71 @@ const eliminarPasilloPorId = async (req, res = response) => {
       })
     );
 };
+//!SECTION
+
+/* -------------------------------------------------------------------------- */
+/*                 FUNCIONES PARA VALIDAR PASILLOS EXISTENTES                 */
+/* -------------------------------------------------------------------------- */
+
+const existePasilloPorNombre = async (nombre) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+
+      connection.query(
+        `SELECT * FROM pasillos WHERE nombre_pasillo= ? AND estado_pasillo = "activo"`,
+        nombre,
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          resolve(result.length > 0);
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  });
+};
+
+const existePasilloPorNombreActualizable = async (id, nombre) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+
+      connection.query(
+        `SELECT * FROM pasillos WHERE id_pasillo != ? AND nombre_pasillo = ? AND estado_pasillo = "activo"`,
+        [id, nombre],
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          resolve(result.length > 0);
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  });
+};
 
 module.exports = {
   obtenerPasillos,
@@ -267,4 +339,6 @@ module.exports = {
   crearPasillo,
   actualizarPasilloPorId,
   eliminarPasilloPorId,
+  existePasilloPorNombre,
+  existePasilloPorNombreActualizable,
 };
