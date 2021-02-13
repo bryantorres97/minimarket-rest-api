@@ -7,6 +7,7 @@ const obtenerProdcutos = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -17,14 +18,13 @@ const obtenerProdcutos = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           resolve(result);
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -52,6 +52,7 @@ const obtenerProductoPorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
@@ -63,6 +64,7 @@ const obtenerProductoPorId = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.length == 0) {
@@ -75,9 +77,7 @@ const obtenerProductoPorId = async (req, res = response) => {
           resolve(result[0]);
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -115,6 +115,7 @@ const crearProducto = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query('INSERT INTO productos SET ?', producto, (error, result) => {
@@ -123,6 +124,7 @@ const crearProducto = async (req, res = response) => {
             code: 502,
             msg: 'No se puede ejecutar su petición en este momento',
           });
+          return;
         }
 
         const { insertId } = result;
@@ -130,9 +132,7 @@ const crearProducto = async (req, res = response) => {
         resolve({ id_producto: insertId, ...producto });
 
         connection.release((error) => {
-          if (error) {
-            reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-          }
+          if (error) console.log('Error al cerrar la conexión');
         });
       });
     });
@@ -161,19 +161,20 @@ const actualizarProductoPorId = async (req, res = response) => {
     precio_v_producto,
     stock_producto,
     codigo_producto,
-    foto_producto,
+    // foto_producto,
     id_percha_per,
   } = req.body;
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
 
       connection.query(
         `UPDATE productos 
         SET nombre_producto = ?, descripcion_producto=?, precio_producto=?, precio_v_producto=?, 
-            stock_producto=?, codigo_producto=?, foto_producto=?,  id_percha_per=?  
+            stock_producto=?, codigo_producto=?,  id_percha_per=?  
         WHERE id_producto = ? AND estado_producto="activo"`,
         [
           nombre_producto,
@@ -182,7 +183,6 @@ const actualizarProductoPorId = async (req, res = response) => {
           precio_v_producto,
           stock_producto,
           codigo_producto,
-          foto_producto,
           id_percha_per,
           id_producto,
         ],
@@ -193,6 +193,7 @@ const actualizarProductoPorId = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.affectedRows == 0) {
@@ -210,15 +211,12 @@ const actualizarProductoPorId = async (req, res = response) => {
             precio_v_producto,
             stock_producto,
             codigo_producto,
-            foto_producto,
             id_percha_per,
             estado_producto: 'activo',
           });
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -245,6 +243,7 @@ const eliminarProductoPorId = async (req, res = response) => {
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
       }
       connection.query(
         'UPDATE productos SET estado_producto = "inactivo" WHERE id_producto = ? AND estado_producto= "activo"',
@@ -256,6 +255,7 @@ const eliminarProductoPorId = async (req, res = response) => {
               code: 502,
               msg: 'No se puede ejecutar su petición en este momento',
             });
+            return;
           }
 
           if (result.affectedRows == 0) {
@@ -266,14 +266,12 @@ const eliminarProductoPorId = async (req, res = response) => {
           }
 
           resolve({
-            id_pasillo,
-            msg: 'El pasillo ha sido eliminado correctamente',
+            id_producto,
+            msg: 'El producto ha sido eliminado correctamente',
           });
 
           connection.release((error) => {
-            if (error) {
-              reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-            }
+            if (error) console.log('Error al cerrar la conexión');
           });
         }
       );
@@ -293,10 +291,76 @@ const eliminarProductoPorId = async (req, res = response) => {
     );
 };
 
+/* -------------------------------------------------------------------------- */
+/*                 FUNCIONES PARA VALIDAR PRODUCTOS EXISTENTES                */
+/* -------------------------------------------------------------------------- */
+
+const existeProductoPorNombre = async (nombre) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+
+      connection.query(
+        `SELECT * FROM productos WHERE nombre_producto= ? AND estado_producto = "activo"`,
+        nombre,
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          resolve(result.length > 0);
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  });
+};
+
+const existeProductoPorNombreActualizable = async (id, nombre) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+
+      connection.query(
+        `SELECT * FROM productos WHERE id_producto= ? nombre_producto= ? AND estado_producto = "activo"`,
+        [id, nombre],
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          resolve(result.length > 0);
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  });
+};
+
 module.exports = {
   obtenerProdcutos,
   obtenerProductoPorId,
   crearProducto,
   actualizarProductoPorId,
   eliminarProductoPorId,
+  existeProductoPorNombre,
+  existeProductoPorNombreActualizable,
 };

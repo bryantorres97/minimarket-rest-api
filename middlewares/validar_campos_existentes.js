@@ -136,6 +136,48 @@ const validarPerchaExistenteActualizable = async (req, res = response, next) => 
     });
 };
 
+const validarProductoExistente = async (req, res = response, next) => {
+  const { nombre_producto } = req.body;
+
+  await existePerchaPorNombre(nombre_producto)
+    .then((existe) => {
+      if (existe) {
+        return res.status(409).json({
+          ok: false,
+          msg: 'El producto ingresado ya se encuentra registrado',
+        });
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      });
+    });
+};
+
+const validarProductoExistenteActualizable = async (req, res = response, next) => {
+  const { nombre_producto } = req.body;
+  const id_producto = req.params.id;
+  await existePasilloPorNombreActualizable(id_producto, nombre_producto)
+    .then((existe) => {
+      if (existe) {
+        return res.status(409).json({
+          ok: false,
+          msg: 'El producto ingresado ya se encuentra registrado',
+        });
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      });
+    });
+};
+
 module.exports = {
   validarClienteExistente,
   validarClienteExistenteActualizable,
@@ -143,4 +185,6 @@ module.exports = {
   validarPasilloExistenteActualizable,
   validarPerchaExistente,
   validarPerchaExistenteActualizable,
+  validarProductoExistente,
+  validarProductoExistenteActualizable,
 };
