@@ -17,6 +17,7 @@ const actualizarImagen = async (tipo, id, nombreArchivo) => {
         pool.getConnection((error, connection) => {
           if (error) {
             reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+            return;
           }
           // SECTION Verificar existencia del producto
           connection.query(
@@ -24,11 +25,11 @@ const actualizarImagen = async (tipo, id, nombreArchivo) => {
             id,
             (error, result) => {
               if (error) {
-                console.log(error);
                 reject({
                   code: 502,
                   msg: 'No se puede ejecutar su petición en este momento',
                 });
+                return;
               }
 
               if (!result) {
@@ -38,25 +39,25 @@ const actualizarImagen = async (tipo, id, nombreArchivo) => {
                 });
 
                 connection.release((error) => {
-                  if (error) {
-                    reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-                  }
+                  if (error) console.log('No se pudo cerrar la conexión');
                 });
               }
 
-              pathViejo = `./uploads/productos/${producto[0].foto_producto}`;
-              borrarImagen(pathViejo);
+              if (result[0].foto_producto.trim().length > 0) {
+                pathViejo = `./uploads/productos/${result[0].foto_producto}`;
+                borrarImagen(pathViejo);
+              }
 
               connection.query(
                 ' UPDATE productos SET foto_producto = ? WHERE id_producto = ? AND estado_producto="activo"',
                 [nombreArchivo, id],
                 (error, result) => {
                   if (error) {
-                    console.log(error);
                     reject({
                       code: 502,
                       msg: 'No se puede ejecutar su petición en este momento',
                     });
+                    return;
                   }
 
                   if (result.affectedRows > 0) {
@@ -64,9 +65,7 @@ const actualizarImagen = async (tipo, id, nombreArchivo) => {
                   }
 
                   connection.release((error) => {
-                    if (error) {
-                      reject({ code: 502, msg: 'No se puede cerrar la conexión' });
-                    }
+                    if (error) console.log('No se ha podido cerrar la conexión');
                   });
                 }
               );

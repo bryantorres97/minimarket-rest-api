@@ -85,7 +85,7 @@ const retornaImagen = (req, res = response) => {
   if (fs.existsSync(pathImg)) {
     res.sendFile(pathImg);
   } else {
-    const pathImg = path.join(__dirname, `../uploads/productos/NoImage.jpg`);
+    const pathImg = path.join(__dirname, `../uploads/NoImage.png`);
     res.sendFile(pathImg);
   }
 };
