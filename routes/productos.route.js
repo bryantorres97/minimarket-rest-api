@@ -8,6 +8,10 @@ const {
   eliminarProductoPorId,
 } = require('../controllers/productos.controller');
 const { validarCampos } = require('../middlewares/validar_campos');
+const {
+  validarProductoExistente,
+  validarProductoExistenteActualizable,
+} = require('../middlewares/validar_campos_existentes');
 
 const router = Router();
 
@@ -43,6 +47,7 @@ router.post(
     ).notEmpty(),
     check('id_percha_per', 'La percha asignada no es válida').isNumeric(),
     validarCampos,
+    validarProductoExistente,
   ],
   crearProducto
 );
@@ -73,6 +78,7 @@ router.put(
     ).notEmpty(),
     check('id_percha_per', 'La percha asignada no es válida').isNumeric(),
     validarCampos,
+    validarProductoExistenteActualizable,
   ],
   actualizarProductoPorId
 );
