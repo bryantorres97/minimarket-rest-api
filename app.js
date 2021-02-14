@@ -26,6 +26,8 @@ app.use('/api/productos', require('./routes/productos.route'));
 app.use('/api/roles', require('./routes/roles.route'));
 // rutas de uploads
 app.use('/api/uploads', require('./routes/uploads.route'));
+// rutas de usuarios
+app.use('/api/usuarios', require('./routes/usuarios.route'));
 
 app.listen(process.env.APP_PORT, () => {
   console.log(`Servidor corriendo en el puerto ${process.env.APP_PORT}`);

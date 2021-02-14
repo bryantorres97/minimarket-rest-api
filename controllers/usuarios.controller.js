@@ -1,7 +1,10 @@
 const { response } = require('express');
 const { pool } = require('../database/config');
-//SECTION - OBTENER TODOS LOS ROLES ACTIVOS DENTRO DE LA BD
-const obtenerRoles = async (req, res = response) => {
+
+const bcrypt = require('bcryptjs');
+
+//SECTION - OBTENER LISTA DE USUARIOS
+const obtenerUsuarios = async (req, res = response) => {
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
@@ -10,7 +13,7 @@ const obtenerRoles = async (req, res = response) => {
       }
 
       connection.query(
-        'SELECT * FROM roles WHERE estado_rol="activo"',
+        'SELECT * FROM usuarios WHERE estado_usuario="activo"',
         (error, result) => {
           if (error) {
             reject({
@@ -32,7 +35,7 @@ const obtenerRoles = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        roles: result,
+        usuarios: result,
       })
     )
     .catch((error) =>
@@ -43,8 +46,8 @@ const obtenerRoles = async (req, res = response) => {
     );
 };
 
-// SECTION - OBTENER EL ROL A TRAVES DE UN IDENTIFICADOR
-const obtenerRolPorId = async (req, res = response) => {
+//SECTION - OBTENER USUARIO POR ID
+const obtenerUsuarioPorId = async (req, res = response) => {
   const id = req.params.id;
 
   return new Promise((resolve, reject) => {
@@ -55,7 +58,7 @@ const obtenerRolPorId = async (req, res = response) => {
       }
 
       connection.query(
-        'SELECT * FROM roles WHERE id_rol = ? AND estado_rol="activo"',
+        'SELECT * FROM usuarios WHERE id_usuario = ? AND estado_usuario="activo"',
         id,
         (error, result) => {
           if (error) {
@@ -69,11 +72,12 @@ const obtenerRolPorId = async (req, res = response) => {
           if (result.length == 0) {
             reject({
               code: 402,
-              msg: 'No se ha encontrado el rol especificado',
+              msg: 'No se ha encontrado el usuario especificado',
             });
           }
 
           resolve(result[0]);
+
           connection.release((error) => {
             if (error) console.log('Error al cerrar la conexión');
           });
@@ -84,7 +88,7 @@ const obtenerRolPorId = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        rol: result,
+        usuario: result,
       })
     )
     .catch((error) =>
@@ -95,11 +99,14 @@ const obtenerRolPorId = async (req, res = response) => {
     );
 };
 
-// SECTION - CREAR UN NUEVO ROL
-const crearRol = async (req, res = response) => {
-  const rol = {
-    nombre_rol: req.body.nombre_rol,
-    estado_rol: 'activo',
+//SECTION - CREAR UN NUEVO USUARIO
+const crearUsuario = async (req, res = response) => {
+  const usuario = {
+    nombre_usuario: req.body.nombre_usuario,
+    clave_usuario: req.body.clave_usuario,
+    cedula_usuario: req.body.cedula_usuario,
+    id_rol_pertenece: req.body.id_rol_pertenece,
+    estado_usuario: 'activo',
   };
 
   return await new Promise((resolve, reject) => {
@@ -109,7 +116,10 @@ const crearRol = async (req, res = response) => {
         return;
       }
 
-      connection.query('INSERT INTO roles SET ?', rol, (error, result) => {
+      const salt = bcrypt.genSaltSync(10);
+      usuario.clave_usuario = bcrypt.hashSync(usuario.clave_usuario, salt);
+
+      connection.query('INSERT INTO usuarios SET ?', usuario, (error, result) => {
         if (error) {
           reject({
             code: 502,
@@ -117,10 +127,9 @@ const crearRol = async (req, res = response) => {
           });
           return;
         }
-
         const { insertId } = result;
 
-        resolve({ id_rol: insertId, ...rol });
+        resolve({ id_usuario: insertId, ...usuario });
 
         connection.release((error) => {
           if (error) console.log('Error al cerrar la conexión');
@@ -131,7 +140,7 @@ const crearRol = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        rol: result,
+        usuario: result,
       })
     )
     .catch((error) =>
@@ -142,21 +151,30 @@ const crearRol = async (req, res = response) => {
     );
 };
 
-// SECTION - ACTUALIZAR UN ROL
-const actualizarRolPorId = async (req, res = response) => {
-  const id_rol = req.params.id;
-  const { nombre_rol } = req.body;
-
+//SECTION - ACTUALIZAR UN USUARIO
+const actualizarUsuarioPorId = async (req, res = response) => {
+  const id_usuario = req.params.id;
   return await new Promise((resolve, reject) => {
+    const { nombre_usuario, clave_usuario, cedula_usuario, id_rol_pertenece } = req.body;
+
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
         return;
       }
-
+      const salt = bcrypt.genSaltSync(5);
+      const clave_usuario_cifrada = bcrypt.hashSync(clave_usuario, salt);
       connection.query(
-        ' UPDATE roles SET nombre_rol = ? WHERE id_rol = ? AND estado_rol="activo"',
-        [nombre_rol, id_rol],
+        `UPDATE usuarios 
+                          SET nombre_usuario = ?, clave_usuario=?, cedula_usuario=?, id_rol_pertenece=? 
+                          WHERE id_usuario = ?  AND estado_usuario="activo"`,
+        [
+          nombre_usuario,
+          clave_usuario_cifrada,
+          cedula_usuario,
+          id_rol_pertenece,
+          id_usuario,
+        ],
         (error, result) => {
           if (error) {
             reject({
@@ -169,14 +187,17 @@ const actualizarRolPorId = async (req, res = response) => {
           if (result.affectedRows == 0) {
             reject({
               code: 404,
-              msg: 'No se ha encontrado el rol',
+              msg: 'No se ha encontrado el usuario',
             });
           }
 
           resolve({
-            id_rol,
-            nombre_rol,
-            estado_rol: 'activo',
+            id_usuario,
+            nombre_usuario,
+            clave_usuario: clave_usuario_cifrada,
+            cedula_usuario,
+            id_rol_pertenece,
+            estado_usuario: 'activo',
           });
 
           connection.release((error) => {
@@ -189,7 +210,7 @@ const actualizarRolPorId = async (req, res = response) => {
     .then((result) =>
       res.json({
         ok: true,
-        rol: result,
+        usuario: result,
       })
     )
     .catch((error) =>
@@ -200,9 +221,9 @@ const actualizarRolPorId = async (req, res = response) => {
     );
 };
 
-// SECTION - ELIMINAR UN ROL
-const eliminarRolPorId = async (req, res = response) => {
-  const id_rol = req.params.id;
+//SECTION - ELIMINAR UN USUARIO
+const eliminarUsuarioPorId = async (req, res = response) => {
+  const id_usuario = req.params.id;
   return await new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
@@ -211,8 +232,8 @@ const eliminarRolPorId = async (req, res = response) => {
       }
 
       connection.query(
-        'UPDATE roles SET estado_rol = "inactivo" WHERE id_rol = ? AND estado_rol = "activo"',
-        id_rol,
+        'UPDATE usuarios SET estado_usuario = "inactivo" WHERE id_usuario = ? AND estado_usuario="activo"',
+        id_usuario,
         (error, result) => {
           if (error) {
             reject({
@@ -225,13 +246,13 @@ const eliminarRolPorId = async (req, res = response) => {
           if (result.affectedRows == 0) {
             reject({
               code: 404,
-              msg: 'No se ha encontrado el rol',
+              msg: 'No se ha encontrado el usuario',
             });
           }
 
           resolve({
-            id_rol,
-            msg: 'El rol ha sido eliminado correctamente',
+            id_usuario,
+            msg: 'El usuario ha sido eliminado correctamente',
           });
 
           connection.release((error) => {
@@ -256,9 +277,9 @@ const eliminarRolPorId = async (req, res = response) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                   FUNCIONES PARA VALIDAR ROLES EXISTENTES                  */
+/*                 FUNCIONES PARA VALIDAR USUARIOS EXISTENTES                 */
 /* -------------------------------------------------------------------------- */
-const existeRolPorNombre = async (nombre) => {
+const existeUsuarioPorCedula = async (cedula) => {
   return new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
@@ -267,8 +288,8 @@ const existeRolPorNombre = async (nombre) => {
       }
 
       connection.query(
-        `SELECT * FROM roles WHERE nombre_rol= ? AND estado_rol = "activo"`,
-        nombre,
+        `SELECT * FROM usuarios WHERE cedula_usuario= ?  AND estado_usuario="activo"`,
+        cedula,
         (error, result) => {
           if (error) {
             reject({
@@ -288,7 +309,7 @@ const existeRolPorNombre = async (nombre) => {
   });
 };
 
-const existeRolPorNombreActualizable = async (id, nombre) => {
+const existeUsuarioPorCedulaActualizable = async (id, cedula) => {
   return new Promise((resolve, reject) => {
     pool.getConnection((error, connection) => {
       if (error) {
@@ -297,8 +318,8 @@ const existeRolPorNombreActualizable = async (id, nombre) => {
       }
 
       connection.query(
-        `SELECT * FROM roles WHERE id_rol != ? AND nombre_rol= ? AND estado_rol = "activo"`,
-        [id, nombre],
+        `SELECT * FROM usuarios WHERE id_usuario != ? AND cedula_usuario= ?  AND estado_usuario="activo"`,
+        [id, cedula],
         (error, result) => {
           if (error) {
             reject({
@@ -319,11 +340,11 @@ const existeRolPorNombreActualizable = async (id, nombre) => {
 };
 
 module.exports = {
-  obtenerRoles,
-  obtenerRolPorId,
-  crearRol,
-  actualizarRolPorId,
-  eliminarRolPorId,
-  existeRolPorNombre,
-  existeRolPorNombreActualizable,
+  obtenerUsuarios,
+  obtenerUsuarioPorId,
+  crearUsuario,
+  actualizarUsuarioPorId,
+  eliminarUsuarioPorId,
+  existeUsuarioPorCedula,
+  existeUsuarioPorCedulaActualizable,
 };

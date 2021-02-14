@@ -1,4 +1,7 @@
 const { response } = require('express');
+
+/* -------------------- IMPORTACIONES DE LOS VALIDADORES -------------------- */
+
 const {
   existeClientePorCedula,
   existeClientePorCedulaActualizable,
@@ -7,7 +10,27 @@ const {
   existePasilloPorNombre,
   existePasilloPorNombreActualizable,
 } = require('../controllers/pasillos.controller');
-const { existePerchaPorNombre } = require('../controllers/perchas.controller');
+const {
+  existePerchaPorNombre,
+  existePerchaPorNombreActualizable,
+} = require('../controllers/perchas.controller');
+
+const {
+  existeProductoPorNombre,
+  existeProductoPorNombreActualizable,
+} = require('../controllers/productos.controller');
+const {
+  existeRolPorNombre,
+  existeRolPorNombreActualizable,
+} = require('../controllers/roles.controller');
+const {
+  existeUsuarioPorCedula,
+  existeUsuarioPorCedulaActualizable,
+} = require('../controllers/usuarios.controller');
+
+/* -------------------------------------------------------------------------- */
+/*                                 VALIDADORES                                */
+/* -------------------------------------------------------------------------- */
 
 const validarClienteExistente = async (req, res = response, next) => {
   const { cedula_cliente } = req.body;
@@ -118,7 +141,7 @@ const validarPerchaExistente = async (req, res = response, next) => {
 const validarPerchaExistenteActualizable = async (req, res = response, next) => {
   const { nombre_percha } = req.body;
   const id_percha = req.params.id;
-  await existePasilloPorNombreActualizable(id_percha, nombre_percha)
+  await existePerchaPorNombreActualizable(id_percha, nombre_percha)
     .then((existe) => {
       if (existe) {
         return res.status(409).json({
@@ -139,7 +162,7 @@ const validarPerchaExistenteActualizable = async (req, res = response, next) => 
 const validarProductoExistente = async (req, res = response, next) => {
   const { nombre_producto } = req.body;
 
-  await existePerchaPorNombre(nombre_producto)
+  await existeProductoPorNombre(nombre_producto)
     .then((existe) => {
       if (existe) {
         return res.status(409).json({
@@ -160,12 +183,96 @@ const validarProductoExistente = async (req, res = response, next) => {
 const validarProductoExistenteActualizable = async (req, res = response, next) => {
   const { nombre_producto } = req.body;
   const id_producto = req.params.id;
-  await existePasilloPorNombreActualizable(id_producto, nombre_producto)
+  await existeProductoPorNombreActualizable(id_producto, nombre_producto)
     .then((existe) => {
       if (existe) {
         return res.status(409).json({
           ok: false,
           msg: 'El producto ingresado ya se encuentra registrado',
+        });
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      });
+    });
+};
+
+const validarRolExistente = async (req, res = response, next) => {
+  const { nombre_rol } = req.body;
+
+  await existeRolPorNombre(nombre_rol)
+    .then((existe) => {
+      if (existe) {
+        return res.status(409).json({
+          ok: false,
+          msg: 'El rol ingresado ya se encuentra registrado',
+        });
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      });
+    });
+};
+
+const validarRolExistenteActualizable = async (req, res = response, next) => {
+  const { nombre_rol } = req.body;
+  const id_rol = req.params.id;
+  await existeRolPorNombreActualizable(id_rol, nombre_rol)
+    .then((existe) => {
+      if (existe) {
+        return res.status(409).json({
+          ok: false,
+          msg: 'El rol ingresado ya se encuentra registrado',
+        });
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      });
+    });
+};
+
+const validarUsuarioExistente = async (req, res = response, next) => {
+  const { cedula_usuario } = req.body;
+
+  await existeUsuarioPorCedula(cedula_usuario)
+    .then((existe) => {
+      if (existe) {
+        return res.status(409).json({
+          ok: false,
+          msg: 'El usuario ingresado ya se encuentra registrado',
+        });
+      }
+      next();
+    })
+    .catch((error) => {
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      });
+    });
+};
+
+const validarUsuarioExistenteActualizable = async (req, res = response, next) => {
+  const { cedula_usuario } = req.body;
+  const id_usuario = req.params.id;
+  await existeUsuarioPorCedulaActualizable(id_usuario, cedula_usuario)
+    .then((existe) => {
+      if (existe) {
+        return res.status(409).json({
+          ok: false,
+          msg: 'El usuario ingresado ya se encuentra registrado',
         });
       }
       next();
@@ -187,4 +294,8 @@ module.exports = {
   validarPerchaExistenteActualizable,
   validarProductoExistente,
   validarProductoExistenteActualizable,
+  validarRolExistente,
+  validarRolExistenteActualizable,
+  validarUsuarioExistente,
+  validarUsuarioExistenteActualizable,
 };
