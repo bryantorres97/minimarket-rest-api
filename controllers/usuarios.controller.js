@@ -271,7 +271,7 @@ const eliminarUsuarioPorId = async (req, res = response) => {
 //SECTION - CAMBIAR PASSWORD
 const cambiarClave = async (req, res = response) => {
   const id_usuario = req.params.id;
-  console.log(req.id_usuario);
+  // console.log(req.id_usuario);
   if (req.id_usuario != id_usuario) {
     return res.status(400).json({
       ok: false,
