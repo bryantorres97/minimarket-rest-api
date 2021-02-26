@@ -155,26 +155,19 @@ const crearUsuario = async (req, res = response) => {
 const actualizarUsuarioPorId = async (req, res = response) => {
   const id_usuario = req.params.id;
   return await new Promise((resolve, reject) => {
-    const { nombre_usuario, clave_usuario, cedula_usuario, id_rol_pertenece } = req.body;
+    const { nombre_usuario, cedula_usuario, id_rol_pertenece } = req.body;
 
     pool.getConnection((error, connection) => {
       if (error) {
         reject({ code: 500, msg: 'No se ha podido establecer conexión' });
         return;
       }
-      const salt = bcrypt.genSaltSync(5);
-      const clave_usuario_cifrada = bcrypt.hashSync(clave_usuario, salt);
+
       connection.query(
         `UPDATE usuarios 
-                          SET nombre_usuario = ?, clave_usuario=?, cedula_usuario=?, id_rol_pertenece=? 
+                          SET nombre_usuario = ?, cedula_usuario=?, id_rol_pertenece=? 
                           WHERE id_usuario = ?  AND estado_usuario="activo"`,
-        [
-          nombre_usuario,
-          clave_usuario_cifrada,
-          cedula_usuario,
-          id_rol_pertenece,
-          id_usuario,
-        ],
+        [nombre_usuario, cedula_usuario, id_rol_pertenece, id_usuario],
         (error, result) => {
           if (error) {
             reject({
@@ -194,7 +187,6 @@ const actualizarUsuarioPorId = async (req, res = response) => {
           resolve({
             id_usuario,
             nombre_usuario,
-            clave_usuario: clave_usuario_cifrada,
             cedula_usuario,
             id_rol_pertenece,
             estado_usuario: 'activo',
@@ -276,6 +268,74 @@ const eliminarUsuarioPorId = async (req, res = response) => {
     );
 };
 
+//SECTION - CAMBIAR PASSWORD
+const cambiarClave = async (req, res = response) => {
+  const id_usuario = req.params.id;
+  console.log(req.id_usuario);
+  if (req.id_usuario != id_usuario) {
+    return res.status(400).json({
+      ok: false,
+      msg: 'No tiene permiso de cambiar la clave',
+    });
+  }
+  return await new Promise((resolve, reject) => {
+    const { clave_usuario } = req.body;
+
+    pool.getConnection((error, connection) => {
+      if (error) {
+        reject({ code: 500, msg: 'No se ha podido establecer conexión' });
+        return;
+      }
+      const salt = bcrypt.genSaltSync(5);
+      const clave_usuario_cifrada = bcrypt.hashSync(clave_usuario, salt);
+      connection.query(
+        `UPDATE usuarios 
+                          SET clave_usuario = ? 
+                          WHERE id_usuario = ?  AND estado_usuario="activo"`,
+        [clave_usuario_cifrada, id_usuario],
+        (error, result) => {
+          if (error) {
+            reject({
+              code: 502,
+              msg: 'No se puede ejecutar su petición en este momento',
+            });
+            return;
+          }
+
+          if (result.affectedRows == 0) {
+            reject({
+              code: 404,
+              msg: 'No se ha encontrado el usuario',
+            });
+            return;
+          }
+
+          resolve({
+            id_usuario,
+            clave_usuario: clave_usuario_cifrada,
+            estado_usuario: 'activo',
+          });
+
+          connection.release((error) => {
+            if (error) console.log('Error al cerrar la conexión');
+          });
+        }
+      );
+    });
+  })
+    .then((result) =>
+      res.json({
+        ok: true,
+        usuario: result,
+      })
+    )
+    .catch((error) =>
+      res.status(error.code).json({
+        ok: false,
+        msg: error.msg,
+      })
+    );
+};
 /* -------------------------------------------------------------------------- */
 /*                 FUNCIONES PARA VALIDAR USUARIOS EXISTENTES                 */
 /* -------------------------------------------------------------------------- */
@@ -345,6 +405,7 @@ module.exports = {
   crearUsuario,
   actualizarUsuarioPorId,
   eliminarUsuarioPorId,
+  cambiarClave,
   existeUsuarioPorCedula,
   existeUsuarioPorCedulaActualizable,
 };
