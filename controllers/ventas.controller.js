@@ -134,7 +134,7 @@ const insertarVenta = async (venta) => {
                   id_producto_per: producto.id_producto,
                   cantidad_detalle: producto.cantidad,
                   subtotal_detalle: producto.cantidad * producto.precio_v_producto,
-                  estado_detalle: 1,
+                  estado_detalle: 'activo',
                 };
 
                 connection.query(
