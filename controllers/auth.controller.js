@@ -7,7 +7,7 @@ const login = async (req, res = response) => {
   const { cedula_usuario, clave_usuario } = req.body;
 
   try {
-    const usuario = await obtenerUsuarioPorCedula(cedula_usuario);
+    const { nombre_rol, ...usuario } = await obtenerUsuarioPorCedula(cedula_usuario);
     const passwordValido = bcrypt.compareSync(clave_usuario, usuario.clave_usuario);
 
     if (!passwordValido) {
@@ -22,6 +22,7 @@ const login = async (req, res = response) => {
       ok: true,
       token,
       usuario,
+      nombre_rol,
     });
   } catch (error) {
     if (error.code) {
@@ -43,12 +44,13 @@ const renovarToken = async (req, res) => {
 
   try {
     const token = await generarJWT(id_usuario, cedula_usuario);
-    const usuario = await obtenerUsuarioPorCedula(cedula_usuario);
+    const { nombre_rol, ...usuario } = await obtenerUsuarioPorCedula(cedula_usuario);
 
     res.json({
       ok: true,
       token,
       usuario,
+      nombre_rol,
     });
   } catch (error) {
     if (error.code) {
@@ -74,7 +76,11 @@ const obtenerUsuarioPorCedula = async (cedula_usuario) => {
       }
 
       connection.query(
-        'SELECT id_usuario, clave_usuario FROM usuarios WHERE cedula_usuario = ? AND estado_usuario="activo"',
+        `SELECT id_usuario, clave_usuario, nombre_usuario, cedula_usuario, nombre_rol 
+        FROM usuarios
+        INNER JOIN roles
+        ON usuarios.id_rol_pertenece = roles.id_rol 
+        WHERE cedula_usuario = ? AND estado_usuario="activo"`,
         cedula_usuario,
         (error, result) => {
           if (error) {
