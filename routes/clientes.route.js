@@ -1,55 +1,86 @@
 const { Router } = require('express');
 const { check } = require('express-validator');
 const {
-  obtenerClientes,
-  obtenerClientePorId,
-  crearCliente,
-  actualizarClientePorId,
-  eliminarClientePorId,
+	obtenerClientes,
+	obtenerClientePorId,
+	crearCliente,
+	actualizarClientePorId,
+	eliminarClientePorId,
+	login,
 } = require('../controllers/clientes.controller');
-const { validarCampos, validarCedulaCliente } = require('../middlewares/validar_campos');
 const {
-  validarClienteExistente,
-  validarClienteExistenteActualizable,
+	validarCampos,
+	validarCedulaCliente,
+} = require('../middlewares/validar_campos');
+const {
+	validarClienteExistente,
+	validarClienteExistenteActualizable,
 } = require('../middlewares/validar_campos_existentes');
 
 const router = Router();
 
 router.get('/', obtenerClientes);
+
 router.get(
-  '/:id',
-  [check('id', 'El id no es válido').isNumeric(), validarCampos],
-  obtenerClientePorId
+	'/:id',
+	[check('id', 'El id no es válido').isNumeric(), validarCampos],
+	obtenerClientePorId
 );
+
 router.post(
-  '/',
-  [
-    check('nombre_cliente', 'El nombre del cliente es obligatorio').notEmpty(),
-    check('apellido_cliente', 'El apellido del cliente es obligatorio').notEmpty(),
-    check('cedula_cliente', 'La cédula del cliente es obligatoria').notEmpty(),
-    validarCampos,
-    validarCedulaCliente,
-    validarClienteExistente,
-  ],
-  crearCliente
+	'/',
+	[
+		check('nombre_cliente', 'El nombre del cliente es obligatorio').notEmpty(),
+		check(
+			'apellido_cliente',
+			'El apellido del cliente es obligatorio'
+		).notEmpty(),
+		check('cedula_cliente', 'La cédula del cliente es obligatoria').notEmpty(),
+		check(
+			'clave_cliente',
+			'La contraseña del cliente es obligatoria'
+		).notEmpty(),
+		validarCampos,
+		validarCedulaCliente,
+		validarClienteExistente,
+	],
+	crearCliente
 );
+
+router.post(
+	'/login',
+	[
+		check('cedula_cliente', 'La cédula del cliente es obligatoria').notEmpty(),
+		check(
+			'clave_cliente',
+			'La contraseña del cliente es obligatoria'
+		).notEmpty(),
+		validarCampos,
+	],
+	login
+);
+
 router.put(
-  '/:id',
-  [
-    check('id', 'El id no es válido').isNumeric(),
-    check('nombre_cliente', 'El nombre del cliente es obligatorio').notEmpty(),
-    check('apellido_cliente', 'El apellido del cliente es obligatorio').notEmpty(),
-    check('cedula_cliente', 'La cédula del cliente es obligatoria').notEmpty(),
-    validarCampos,
-    validarCedulaCliente,
-    validarClienteExistenteActualizable,
-  ],
-  actualizarClientePorId
+	'/:id',
+	[
+		check('id', 'El id no es válido').isNumeric(),
+		check('nombre_cliente', 'El nombre del cliente es obligatorio').notEmpty(),
+		check(
+			'apellido_cliente',
+			'El apellido del cliente es obligatorio'
+		).notEmpty(),
+		check('cedula_cliente', 'La cédula del cliente es obligatoria').notEmpty(),
+		validarCampos,
+		validarCedulaCliente,
+		validarClienteExistenteActualizable,
+	],
+	actualizarClientePorId
 );
+
 router.delete(
-  '/:id',
-  [check('id', 'El id no es válido').isNumeric(), validarCampos],
-  eliminarClientePorId
+	'/:id',
+	[check('id', 'El id no es válido').isNumeric(), validarCampos],
+	eliminarClientePorId
 );
 
 module.exports = router;
