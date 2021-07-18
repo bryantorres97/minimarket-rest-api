@@ -359,6 +359,7 @@ const login = async (req, res = response) => {
 		res.json({
 			ok: true,
 			token,
+			cliente,
 		});
 	} catch (error) {
 		if (error.code) {
