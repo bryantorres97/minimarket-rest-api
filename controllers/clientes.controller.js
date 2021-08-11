@@ -178,7 +178,7 @@ const crearCliente = async (req, res = response) => {
 						cliente.id_cliente,
 						cliente.cedula_cliente
 					);
-					resolve(token);
+					resolve({ token, cliente });
 					connection.release((error) => {
 						if (error) {
 							reject({ code: 502, msg: 'No se puede cerrar la conexión' });
@@ -191,7 +191,8 @@ const crearCliente = async (req, res = response) => {
 		.then((result) =>
 			res.json({
 				ok: true,
-				token: result,
+				token: result.token,
+				cliente: result.cliente,
 			})
 		)
 		.catch((error) =>
